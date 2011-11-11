@@ -1,7 +1,7 @@
 /*jshint boss:true, evil:true */
 
 // usage:
-//   cat ${file} | jsc ${env_home}/jsc.js "{option1:true,option2:false}" ${file}
+//   jsc ${env_home}/jsc.js -- "{option1:true,option2:false}" ${file} ...
 
 load("jshint.js");
 
@@ -24,18 +24,19 @@ if (typeof(JSHINT) === 'undefined') {
 		quit();
 	}
 
-	var line = true;
-	var input = "";
-	while ( line ) {
-		line = readline();
-		input += line;
-	}
-
-	if (!JSHINT(input, opts)) {
-		for (var j = 0; err = JSHINT.errors[j]; j++) {
-			print(err.reason + ' (line: ' + err.line + ', character: ' + err.character + ')');
-			print('> ' + (err.evidence || '').replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1"));
-			print('');
+	for (var i = 1; i < args.length; i++) {
+		try {
+			input = read(args[i]);
+		} catch(err) {
+			print("Error while reading:", args[i]);
+			throw err;
+		}
+		if (!JSHINT(input, opts)) {
+			for (var j = 0; err = JSHINT.errors[j]; j++) {
+				print(err.reason + ' (line: ' + err.line + ', character: ' + err.character + ')');
+				print('> ' + (err.evidence || '').replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1"));
+				print('');
+			}
 		}
 	}
 

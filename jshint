@@ -5,14 +5,21 @@
 #
 # TODO: auto-detect the node jshint frontend
 #
-HERE=`readlink -f $0`
-HERE=`dirname $0`
 
 function quiet {
 	"$@" >/dev/null 2>&1
 }
 
-function getOpts() {
+function abspath {
+	path="$1"
+	if [[ "$path" =~ ^/ ]]; then
+		echo $path
+	else
+		echo "$PWD/$path"
+	fi
+}
+
+function getOpts {
 	if [[ "$@" =~ (^| )--?h ]]; then
 		echo "usage: jshint ['{\"opt1\":true,\"opt2\":false}'] file1.js ..."
 		exit 0
@@ -37,9 +44,10 @@ function main {
 
 	cd $HERE
 	if quiet which d8; then
-		d8 env/d8.js -- "$jsopts" "${files[@]}"
+		d8 env/jsc.js -- "$jsopts" "${files[@]}"
 	elif quiet which jsc; then
-		jsc env/jsc.js -- "$jsopts" "${files[@]}"
+		# TODO: needs testing. not sure if it needs the "--" or not
+		jsc env/jsc.js "$jsopts" "${files[@]}"
 	elif quiet which smjs; then
 		smjs env/jsc.js "$jsopts" "${files[@]}"
 	elif [ -e "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc" ]; then
@@ -49,5 +57,13 @@ function main {
 		exit 1
 	fi
 }
+
+if [[ -L "$0" ]]; then
+	SCRIPT=`readlink $0`
+else
+	SCRIPT="$0"
+fi
+HERE=`abspath $SCRIPT`
+HERE=`dirname $HERE`
 
 main "$@"

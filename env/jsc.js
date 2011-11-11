@@ -29,7 +29,7 @@ if (typeof(JSHINT) === 'undefined') {
 			input = read(args[i]);
 		} catch(err) {
 			print("Error while reading:", args[i]);
-			quit();
+			throw err;
 		}
 		if (!JSHINT(input, opts)) {
 			for (var j = 0; err = JSHINT.errors[j]; j++) {

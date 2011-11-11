@@ -260,6 +260,7 @@ var JSHINT = (function () {
             bitwise     : true, // if bitwise operators should not be allowed
             boss        : true, // if advanced usage of assignments should be allowed
             browser     : true, // if the standard browser globals should be predefined
+            camelcase	: true, // if variables should follow camel case convention
             couch       : true, // if CouchDB globals should be predefined
             curly       : true, // if curly braces around all blocks should be required
             debug       : true, // if debugger statements should be allowed
@@ -1060,6 +1061,8 @@ var JSHINT = (function () {
                             (value != '__dirname' && value != '__filename')) {
                         warningAt("Unexpected {a} in '{b}'.", line, from, "dangling '_'", value);
                     }
+                } else if (option.camelcase && value.indexOf('_') > 0 && value.indexOf('_') < value.length - 1 && value.toUpperCase() != value) {
+                	warningAt("Name {a} should be camel case", line, from, value);
                 }
             }
             t.value = value;

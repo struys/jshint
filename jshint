@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+# A command-line frontent to jshint.
+# We try to auto-detect a supported environment and use it.
+#
+# TODO: auto-detect the node jshint frontend
+#
+
+function quiet {
+	"$@" >/dev/null 2>&1
+}
+
+function abspath {
+	path="$1"
+	if [[ "$path" =~ ^/ ]]; then
+		echo $path
+	else
+		echo "$PWD/$path"
+	fi
+}
+
+function getOpts {
+	if [[ "$@" =~ (^| )--?h ]]; then
+		echo "usage: jshint ['{\"opt1\":true,\"opt2\":false}'] file1.js ..."
+		exit 0
+	fi
+	if [[ ! -f "$1" && "$1" =~ [a-z,:{}] ]]; then
+		jsopts="$1"
+		shift
+	else
+		jsopts="{}"
+	fi
+	
+	# Make sure all input files are absolute paths.
+	index=0
+	for file in "$@"; do
+		files[$index]=`abspath "$file"`
+		let index+=1
+	done
+}
+
+function main {
+	getOpts "$@"
+
+	cd $HERE
+	if quiet which d8; then
+		d8 env/d8.js -- "$jsopts" "${files[@]}"
+	elif quiet which jsc; then
+		for file in "${files[@]}"; do
+			cat "$file" | jsc env/jsc.js "$jsopts" "$file"
+		done
+	elif quiet which smjs; then
+		smjs env/d8.js "$jsopts" "${files[@]}"
+	elif [ -e "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc" ]; then
+		/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc env/jsc.js -- "$jsopts" "${files[@]}"
+	else
+		echo "Could not find any supporte JavaScript environment. Looked for: d8 jsc smjs"
+		exit 1
+	fi
+}
+
+if [[ -L "$0" ]]; then
+	SCRIPT=`readlink $0`
+else
+	SCRIPT="$0"
+fi
+HERE=`abspath $SCRIPT`
+HERE=`dirname $HERE`
+
+main "$@"

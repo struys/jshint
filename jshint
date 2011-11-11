@@ -34,7 +34,7 @@ function getOpts {
 	# Make sure all input files are absolute paths.
 	index=0
 	for file in "$@"; do
-		files[$index]=`readlink -f "$file"`
+		files[$index]=`abspath "$file"`
 		let index+=1
 	done
 }

@@ -275,6 +275,7 @@ var JSHINT = (function () {
             expr        : true, // if ExpressionStatement should be allowed as Programs
             forin       : true, // if for in statements must filter
             funcscope   : true, // if only function scope should be used for scope tests
+            funcdec		: true, // if functions declarations are not allowed
             globalstrict: true, // if global "use strict"; should be allowed (also
                                 // enables 'strict')
             immed       : true, // if immediate invocations must be wrapped in parens
@@ -1063,6 +1064,8 @@ var JSHINT = (function () {
                     }
                 } else if (option.camelcase && value.indexOf('_') > 0 && value.indexOf('_') < value.length - 1 && value.toUpperCase() != value) {
                 	warningAt("Name {a} should be camel case", line, from, value);
+                } else if (option.nothat && (value === 'that' || value === 'self')) {
+                	warningAt("{a} is a non descriptive aliases for this, should use lowercase object name", line, from, value);
                 }
             }
             t.value = value;
@@ -1926,6 +1929,8 @@ loop:   for (;;) {
                 advance();
                 if (isArray && token.id == '(' && nexttoken.id == ')')
                     warning("Use the array literal notation [].", token);
+                if(isArray && token.id == '(' && (nexttoken.type === '(identifier)' || nexttoken.type === '(number)'))
+                	warning("Unary Array notation is considered unsafe. It will create a fixed size array and will not error when assigning out of bounds. Use array literal notation [].");
                 if (token.led) {
                     left = token.led(left);
                 } else {
@@ -2295,9 +2300,14 @@ loop:   for (;;) {
     // argument
     function identifier(fnparam) {
         var i = optionalidentifier(fnparam);
-        if (i) {
+        
+    	if (option.funcdec && i && prevtoken.id === 'function')
+        	warning('Function declarations are not permitted');
+    	
+    	if (i) {
             return i;
         }
+        
         if (token.id === 'function' && nexttoken.id === '(') {
             warning("Missing name in function declaration.");
         } else {
@@ -2596,7 +2606,7 @@ loop:   for (;;) {
         return this;
     });
 
-    type('(string)', function () {
+    type('(string)', function (left) {
         return this;
     });
 

@@ -318,6 +318,7 @@ var JSHINT = (function () {
             sub         : true, // if all forms of subscript notation are tolerated
             supernew    : true, // if `new function () { ... };` and `new Object;`
                                 // should be tolerated
+            tabspace    : true, // if tab and space mixing is allowed
             trailing    : true, // if trailing whitespace rules apply
             validthis   : true, // if 'this' inside a non-constructor function is valid.
                                 // This is a function scoped option only.
@@ -1010,7 +1011,7 @@ var JSHINT = (function () {
             line += 1;
             at = s.search(/ \t|\t /);
 
-            if (at >= 0)
+            if (!option.tabspace && at >= 0)
                 warningAt("Mixed spaces and tabs.", line, at + 1);
 
             s = s.replace(/\t/g, tab);

@@ -56,7 +56,7 @@ function jsc {
 function smjs_interpret {
     for file in "${files[@]}"; do
         if [[ -r "$file" ]]; then
-		cat "$file" | smjs env/jsc.js "$HERE/jshint.js" "$jsopts" "$file"
+            cat "$file" | smjs env/jsc.js "$HERE/jshint.js" "$jsopts" "$file"
         else
             echo "Error while reading:" "$file"
         fi

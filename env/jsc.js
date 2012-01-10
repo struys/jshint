@@ -11,42 +11,44 @@ if (typeof(JSHINT) === 'undefined') {
 }
 
 (function(args){
-    if (args.length < 2) {
-        print('usage: cat file.js | jsc.js /path/to/jshint.js jsopts file.js');
-        quit();
+  if (args.length < 2) {
+    print('usage: cat file.js | jsc.js /path/to/jshint.js jsopts file.js');
+    quit();
+  }
+
+  var err, opts;
+  try {
+    opts = JSON.parse(args[1]);
+  } catch(err) {
+    print( "Error while parsing arguments: '" + args[1] + "'" );
+    quit();
+  }
+
+  var line = readline();
+  var input = "";
+  while ( line !== null && line !== undefined && line !== 'EOF***') {
+    input += line + '\n';
+    line = readline();
+  }
+
+  if (!JSHINT(input, opts)) {
+    if (JSHINT.errors.length) {
+      print("LINT ERROR: " + args[2]);
     }
 
-	var err, opts;
-	try {
-		opts = JSON.parse(args[1]);
-	} catch(err) {
-		print( "Error while parsing arguments: '" + args[1] + "'" );
-		quit();
-	}
+    for (var j = 0; err = JSHINT.errors[j]; j++) {
+      print(err.reason + ' (line: ' + err.line + ', character: ' + err.character + ')');
+      print('> ' + (err.evidence || '').replace(/\t/g, "    "));
+      print((new Array(err.character + 2)).join(' ') + '^');
+    }
+  }
 
-	var line = readline();
-	var input = "";
-	while ( line !== null && line !== undefined) {
-		input += line + '\n';
-		line = readline();
-	}
-
-	if (!JSHINT(input, opts)) {
-		if (JSHINT.errors.length) {
-			print("ERROR: " + args[2]);
-		}
-
-		for (var j = 0; err = JSHINT.errors[j]; j++) {
-			print(err.reason + ' (line: ' + err.line + ', character: ' + err.character + ')');
-			print('> ' + (err.evidence || '').replace(/\t/g, "    "));
-			print((new Array(err.character + 2)).join(' ') + '^');
-		}
-	}
-
-	if (JSHINT.errors.length) {
-		quit(-1);
-	}
+  if (JSHINT.errors.length) {
+    quit(-1);
+  }
 
 
-    quit();
+  quit();
 })(arguments);
+
+// vim:expandtab:sw=2:sts=2

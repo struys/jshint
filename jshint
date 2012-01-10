@@ -6,77 +6,132 @@
 # TODO: auto-detect the node jshint frontend
 #
 
-function quiet {
+# change this if you're installing to a non-standard location. for testing
+# and such, run jshint with -t to try and deduce the path from the location
+# of this script
+root="/usr/share/jshint"
+
+jsopts="{}"
+files=()
+
+# check for support for long options, which humans almost universally prefer
+getopt_short_only=0
+getopt -T > /dev/null
+if [ $? -ne 4 ] ; then
+	getopt_short_only=1
+fi
+
+quiet() {
 	"$@" >/dev/null 2>&1
 }
 
-function abspath {
+abspath() {
 	path="$1"
-	if [[ "$path" =~ ^/ ]]; then
-		echo $path
+	# just use readlink -f on platforms (e.g., non-bsd) where it's supported
+	if readlink -f / >/dev/null 2>&1 ; then
+		readlink -f $path
 	else
-		echo "$PWD/$path"
+		if [ $(expr "$path" : "/") -eq 1 ] ; then
+			echo $path
+		else
+			echo "$(pwd)/$path"
+		fi
 	fi
 }
 
-function getOpts {
-	if [[ "$@" =~ (^| )--?h ]]; then
-		echo "usage: jshint ['{\"opt1\":true,\"opt2\":false}'] file1.js ..."
-		exit 0
-	fi
-
-	# heuristic for json argument: not a file and looks like json
-	if [[ ! -f "$1" && "$1" =~ \{.*\} ]]; then
-		jsopts="$1"
-		shift
+usage() {
+	if [ $getopt_short_only -eq 1 ] ; then
+		echo "usage: jshint [-h] [-t] ['{\"opt1\":true,\"opt2\":false}'] file1.js ..." >&2
 	else
-		jsopts="{}"
+		echo "usage: jshint [--help] [--testing] ['{\"opt1\":true,\"opt2\":false}'] file1.js ..." >&2
 	fi
-	
-	# Make sure all input files are absolute paths.
-	index=0
-	for file in "$@"; do
-		files[$index]=`abspath "$file"`
-		let index+=1
+	exit 1
+}
+
+getOpts() {
+	if [ $getopt_short_only -eq 1 ] ; then
+		TEMP=$(getopt 'ht' $*)
+	else
+		TEMP=$(getopt -o 'ht' --long 'help,testing' -n "$0" -- "$@")
+		eval set -- $TEMP
+	fi
+	while [ $# -gt 0 ] ; do
+		opt=$1
+		shift
+		case "$opt" in
+			-h | --help )
+				usage
+				;;
+			{*} )
+				if [ -f "$opt" ] ; then
+					files[ ${#files[@]} ]="$opt"
+				else
+					jsopts="$opt"
+				fi
+				;;
+			-t | --testing )
+				root="$(dirname $(abspath $0))"
+				;;
+			-- )
+				;;
+			* )
+				if [ -f "$opt" ] ; then
+					files[ ${#files[@]} ]="$opt"
+				else
+					echo "file arg $opt does not exist; ignoring" >&2
+				fi
+				;;
+		esac
 	done
 }
 
-function jsc {
-	interpreter=$1
+run_js() {
+	style="$1"
+	interpreter="$2"
 
-	for file in "${files[@]}"; do
-		if [[ -r "$file" ]]; then
-			cat "$file" | "$interpreter" env/jsc.js "$HERE/jshint.js" "$jsopts" "$file"
+	for file in "${files[@]}" ; do
+		if [ -r "$file" ]; then
+			if [ "$style" = "jsc" ] ; then
+				( cat "$file" ; echo "EOF***" ) | "$interpreter" "$root/env/jsc.js" -- "$root/jshint.js" "$jsopts" "$file"
+			else
+				cat "$file" | "$interpreter" "$root/env/jsc.js" "$root/jshint.js" "$jsopts" "$file"
+			fi
 		else
-			echo "Error while reading:" "$file"
+			echo "Error while reading: '$file'" >&2
 		fi
 	done
 }
 
-function main {
+
+main() {
 	getOpts "$@"
-	cd $HERE
+
+	if [ ! -e "$root/env/jsc.js" ] ; then
+		echo "Could not find $root/env/jsc.js ; run with -t for testing or fix root location" >&2
+		usage
+	fi
+
+	if [ ${#files[@]} -eq 0 ]; then
+		echo "no files specified" >&2
+		usage
+	fi
 
 	if quiet which d8; then
-		d8 env/d8.js -- "$jsopts" "${files[@]}"
+		d8 "$root"/env/d8.js -- "$jsopts" "$files"
 	elif quiet which smjs; then
-		jsc smjs
+		run_js smjs smjs
 	elif quiet which jsc; then
-		jsc jsc
-	elif [ -e "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc" ]; then
-		jsc /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc
+		run_js jsc jsc
+	elif [ -e /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc ]; then
+		# jsc under modern OS X doesn't seem to support command-line
+		# arguments, so this probably won't work
+		run_js jsc /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc
 	else
-		echo "Could not find any supported JavaScript environment. Looked for: d8 jsc smjs"
+		echo "Could not find any supported JavaScript environment. Looked for: d8 jsc smjs" >&2
 		exit 1
 	fi
 }
 
-if [[ -L "$0" ]]; then
-	SCRIPT=`readlink $0`
-else
-	SCRIPT="$0"
-fi
-HERE=`abspath $SCRIPT`
-HERE=`dirname $HERE`
-
 main "$@"
+
+# vim: set noexpandtab:

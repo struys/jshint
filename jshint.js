@@ -260,6 +260,7 @@ var JSHINT = (function () {
             bitwise     : true, // if bitwise operators should not be allowed
             boss        : true, // if advanced usage of assignments should be allowed
             browser     : true, // if the standard browser globals should be predefined
+            camelcase	: true, // if variables should follow camel case convention
             couch       : true, // if CouchDB globals should be predefined
             curly       : true, // if curly braces around all blocks should be required
             debug       : true, // if debugger statements should be allowed
@@ -274,6 +275,7 @@ var JSHINT = (function () {
             expr        : true, // if ExpressionStatement should be allowed as Programs
             forin       : true, // if for in statements must filter
             funcscope   : true, // if only function scope should be used for scope tests
+            funcdec		: true, // if functions declarations are not allowed
             globalstrict: true, // if global "use strict"; should be allowed (also
                                 // enables 'strict')
             immed       : true, // if immediate invocations must be wrapped in parens
@@ -310,6 +312,7 @@ var JSHINT = (function () {
             regexp      : true, // if the . should not be allowed in regexp literals
             rhino       : true, // if the Rhino environment globals should be predefined
             undef       : true, // if variables should be declared before used
+            safearray   : true, // Only allow [] to declare arrays
             scripturl   : true, // if script-targeted URLs should be tolerated
             shadow      : true, // if variable shadowing should be tolerated
             smarttabs   : true, // if smarttabs should be tolerated
@@ -318,6 +321,7 @@ var JSHINT = (function () {
             sub         : true, // if all forms of subscript notation are tolerated
             supernew    : true, // if `new function () { ... };` and `new Object;`
                                 // should be tolerated
+            tabspace    : true, // if tab and space mixing is allowed
             trailing    : true, // if trailing whitespace rules apply
             validthis   : true, // if 'this' inside a non-constructor function is valid.
                                 // This is a function scoped option only.
@@ -1021,7 +1025,7 @@ var JSHINT = (function () {
             else
                 at = s.search(/ \t|\t /);
 
-            if (at >= 0)
+            if (!option.tabspace && at >= 0)
                 warningAt("Mixed spaces and tabs.", line, at + 1);
 
             s = s.replace(/\t/g, tab);
@@ -1073,6 +1077,10 @@ var JSHINT = (function () {
                             (value !== '__dirname' && value !== '__filename')) {
                         warningAt("Unexpected {a} in '{b}'.", line, from, "dangling '_'", value);
                     }
+                } else if (option.camelcase && value.indexOf('_') > 0 && value.indexOf('_') < value.length - 1 && value.toUpperCase() != value) {
+                	warningAt("Name {a} should be camel case", line, from, value);
+                } else if (option.nothat && (value === 'that' || value === 'self')) {
+                	warningAt("{a} is a non descriptive aliases for this, should use lowercase object name", line, from, value);
                 }
             }
             t.value = value;
@@ -1933,6 +1941,8 @@ loop:   for (;;) {
                 advance();
                 if (isArray && token.id === '(' && nexttoken.id === ')')
                     warning("Use the array literal notation [].", token);
+                if (options.safearray && isArray && token.id == '(' && (nexttoken.type === '(identifier)' || nexttoken.type === '(number)'))
+                	warning("Unary Array notation is considered unsafe. It will create a fixed size array and will not error when assigning out of bounds. Use array literal notation [].");
                 if (token.led) {
                     left = token.led(left);
                 } else {
@@ -2305,9 +2315,14 @@ loop:   for (;;) {
     // argument
     function identifier(fnparam) {
         var i = optionalidentifier(fnparam);
-        if (i) {
+        
+    	if (option.funcdec && i && prevtoken.id === 'function')
+        	warning('Function declarations are not permitted');
+    	
+    	if (i) {
             return i;
         }
+        
         if (token.id === 'function' && nexttoken.id === '(') {
             warning("Missing name in function declaration.");
         } else {
@@ -2609,7 +2624,7 @@ loop:   for (;;) {
         return this;
     });
 
-    type('(string)', function () {
+    type('(string)', function (left) {
         return this;
     });
 

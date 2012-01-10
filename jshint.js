@@ -312,6 +312,7 @@ var JSHINT = (function () {
             regexp      : true, // if the . should not be allowed in regexp literals
             rhino       : true, // if the Rhino environment globals should be predefined
             undef       : true, // if variables should be declared before used
+            safearray   : true, // Only allow [] to declare arrays
             scripturl   : true, // if script-targeted URLs should be tolerated
             shadow      : true, // if variable shadowing should be tolerated
             smarttabs   : true, // if smarttabs should be tolerated
@@ -1940,7 +1941,7 @@ loop:   for (;;) {
                 advance();
                 if (isArray && token.id === '(' && nexttoken.id === ')')
                     warning("Use the array literal notation [].", token);
-                if(isArray && token.id == '(' && (nexttoken.type === '(identifier)' || nexttoken.type === '(number)'))
+                if (options.safearray && isArray && token.id == '(' && (nexttoken.type === '(identifier)' || nexttoken.type === '(number)'))
                 	warning("Unary Array notation is considered unsafe. It will create a fixed size array and will not error when assigning out of bounds. Use array literal notation [].");
                 if (token.led) {
                     left = token.led(left);

@@ -53,7 +53,7 @@ function jsc {
     done
 }
 
-function smjs {
+function smjs_interpret {
     for file in "${files[@]}"; do
         if [[ -r "$file" ]]; then
             cat "$file" | smjs env/jsc.js "$HERE/jshint.js" "$jsopts" "$file"
@@ -70,7 +70,7 @@ function main {
     if quiet which d8; then
         d8 env/d8.js -- "$jsopts" "${files[@]}"
     elif quiet which smjs; then
-        smjs
+        smjs_interpret
     elif quiet which jsc; then
         jsc jsc
     elif [ -e "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc" ]; then

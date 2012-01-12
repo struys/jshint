@@ -7,76 +7,88 @@
 #
 
 function quiet {
-	"$@" >/dev/null 2>&1
+    "$@" >/dev/null 2>&1
 }
 
 function abspath {
-	path="$1"
-	if [[ "$path" =~ ^/ ]]; then
-		echo $path
-	else
-		echo "$PWD/$path"
-	fi
+    path="$1"
+    if [[ "$path" =~ ^/ ]]; then
+        echo $path
+    else
+        echo "$PWD/$path"
+    fi
 }
 
 function getOpts {
-	if [[ "$@" =~ (^| )--?h ]]; then
-		echo "usage: jshint ['{\"opt1\":true,\"opt2\":false}'] file1.js ..."
-		exit 0
-	fi
+    if [[ "$@" =~ (^| )--?h ]]; then
+        echo "usage: jshint ['{\"opt1\":true,\"opt2\":false}'] file1.js ..."
+        exit 0
+    fi
 
-	# heuristic for json argument: not a file and looks like json
-	if [[ ! -f "$1" && "$1" =~ \{.*\} ]]; then
-		jsopts="$1"
-		shift
-	else
-		jsopts="{}"
-	fi
-	
-	# Make sure all input files are absolute paths.
-	index=0
-	for file in "$@"; do
-		files[$index]=`abspath "$file"`
-		let index+=1
-	done
+    # heuristic for json argument: not a file and looks like json
+    if [[ ! -f "$1" && "$1" =~ \{.*\} ]]; then
+        jsopts="$1"
+        shift
+    else
+        jsopts="{}"
+    fi
+    
+    # Make sure all input files are absolute paths.
+    index=0
+    for file in "$@"; do
+        files[$index]=`abspath "$file"`
+        let index+=1
+    done
 }
 
 function jsc {
-	interpreter=$1
+    interpreter="$1"
 
-	for file in "${files[@]}"; do
-		if [[ -r "$file" ]]; then
-			cat "$file" | "$interpreter" env/jsc.js "$HERE/jshint.js" "$jsopts" "$file"
-		else
-			echo "Error while reading:" "$file" >&2
-		fi
-	done
+    for file in "${files[@]}"; do
+        if [[ -r "$file" ]]; then
+            (cat "$file"; echo "EOF***") | "$interpreter" env/jsc.js -- "$HERE/jshint.js" "$jsopts" "$file"
+        else
+            echo "Error while reading:" "$file" >&2
+        fi
+    done
+}
+
+function smjs_interpret {
+    for file in "${files[@]}"; do
+        if [[ -r "$file" ]]; then
+            cat "$file" | smjs env/jsc.js "$HERE/jshint.js" "$jsopts" "$file"
+        else
+            echo "Error while reading:" "$file" >&2
+        fi
+    done
 }
 
 function main {
-	getOpts "$@"
-	cd $HERE
+    getOpts "$@"
+    cd $HERE
 
-	if quiet which d8; then
-		d8 env/d8.js -- "$jsopts" "${files[@]}"
-	elif quiet which smjs; then
-		jsc smjs
-	elif quiet which jsc; then
-		jsc jsc
-	elif [ -e "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc" ]; then
-		jsc /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc
-	else
-		echo "Could not find any supported JavaScript environment. Looked for: d8 jsc smjs" >&2
-		exit 1
-	fi
+    if quiet which d8; then
+        d8 env/d8.js -- "$jsopts" "${files[@]}"
+    elif quiet which smjs; then
+        smjs_interpret
+    elif quiet which jsc; then
+        jsc jsc
+    elif [ -e "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc" ]; then
+        jsc /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc
+    else
+        echo "Could not find any supported JavaScript environment. Looked for: d8 jsc smjs"
+        exit 1
+    fi
 }
 
 if [[ -L "$0" ]]; then
-	SCRIPT=`readlink $0`
+    SCRIPT=`readlink $0`
 else
-	SCRIPT="$0"
+    SCRIPT="$0"
 fi
 HERE=`abspath $SCRIPT`
 HERE=`dirname $HERE`
 
 main "$@"
+
+# vim:expandtab:sts=4:

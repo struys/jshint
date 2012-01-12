@@ -48,7 +48,7 @@ function jsc {
 		if [[ -r "$file" ]]; then
 			cat "$file" | "$interpreter" env/jsc.js "$HERE/jshint.js" "$jsopts" "$file"
 		else
-			echo "Error while reading:" "$file"
+			echo "Error while reading:" "$file" >&2
 		fi
 	done
 }
@@ -66,7 +66,7 @@ function main {
 	elif [ -e "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc" ]; then
 		jsc /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Resources/jsc
 	else
-		echo "Could not find any supported JavaScript environment. Looked for: d8 jsc smjs"
+		echo "Could not find any supported JavaScript environment. Looked for: d8 jsc smjs" >&2
 		exit 1
 	fi
 }

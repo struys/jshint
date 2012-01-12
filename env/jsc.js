@@ -1,8 +1,6 @@
 /*jshint boss:true, evil:true */
 
-// usage:
-//   cat ${file} | jsc ${env_home}/jsc.js "{option1:true,option2:false}" ${file}
-
+usage = 'cat file.js | jsc.js /path/to/jshint.js jsopts file.js';
 load(arguments[0]);
 
 if (typeof(JSHINT) === 'undefined') {
@@ -12,7 +10,7 @@ if (typeof(JSHINT) === 'undefined') {
 
 (function(args){
   if (args.length < 2) {
-    print('usage: cat file.js | jsc.js /path/to/jshint.js jsopts file.js');
+    print('usage: ' + usage);
     quit();
   }
 

@@ -6,9 +6,9 @@
 
 /*jshint boss: true, laxbreak: true, node: true, maxlen:100 */
 
-var JSHINT  = require('../jshint.js').JSHINT,
+var JSHINT  = require('../../jshint.js').JSHINT,
     fs      = require('fs'),
-    TestRun = require("./testhelper").setup.testRun;
+    TestRun = require("../helpers/testhelper").setup.testRun;
 
 /**
  * Option `shadow` allows you to re-define variables later in code.
@@ -70,6 +70,7 @@ exports.latedef = function () {
         .addError(2, "'fn' was used before it was defined.")
         .addError(6, "'fn1' was used before it was defined.")
         .addError(10, "'vr' was used before it was defined.")
+        .addError(18, "Inner functions should be listed at the top of the outer function.")
         .test(src, { latedef: true });
 };
 
@@ -318,7 +319,15 @@ exports.undef = function () {
     // Make sure it fails when undef is true
     TestRun()
         .addError(1, "'undef' is not defined.")
-        .addError(6, "'localUndef' is not defined.")
+        .addError(5, "'undef' is not defined.")
+        .addError(6, "'undef' is not defined.")
+        .addError(8, "'undef' is not defined.")
+        .addError(9, "'undef' is not defined.")
+        .addError(13, "'localUndef' is not defined.")
+        .addError(18, "'localUndef' is not defined.")
+        .addError(19, "'localUndef' is not defined.")
+        .addError(21, "'localUndef' is not defined.")
+        .addError(22, "'localUndef' is not defined.")
         .test(src, { undef: true });
 };
 
@@ -834,6 +843,8 @@ exports.regexdash = function () {
       , 'var h = /[-z]/;'
       , 'var g = /[a-\\w]/;'
       , 'var h = /[\\d-z]/;'
+      , 'var i = /[^-ab]/;'
+      , 'var j = /[^ab-]/;'
     ];
 
     // Default behavior
@@ -848,6 +859,8 @@ exports.regexdash = function () {
         .addError(8, "Unescaped '-'.")
         .addError(9, "Unescaped '-'.")
         .addError(10, "Unescaped '-'.")
+        .addError(11, "Unescaped '-'.")
+        .addError(12, "Unescaped '-'.")
         .test(code);
 
     // Regex dash is on

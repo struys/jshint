@@ -41,7 +41,7 @@ if (typeof(JSHINT) === 'undefined') {
       }
 
       for (var j = 0; err = JSHINT.errors[j]; j++) {
-        print(err.reason + ' (line: ' + err.line + ', character: ' + err.character + ')');
+        print(args[i] + ': line ' + err.line + ', col ' + err.character + ', ' + err.reason);
         print('> ' + (err.evidence || '').replace(/\t/g, "    "));
         print((new Array(err.character + 2)).join(' ') + '^');
       }

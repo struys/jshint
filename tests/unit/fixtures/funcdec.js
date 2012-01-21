@@ -3,7 +3,7 @@ function x() {
 
 }
 
-var x = function() {
+var x = function () {
 
 };
 

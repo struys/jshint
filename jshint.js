@@ -196,14 +196,14 @@
  XPathException, XPathExpression, XPathNamespace, XPathNSResolver, XPathResult, "\\", a,
  addEventListener, address, alert, apply, applicationCache, arguments, arity,
  asi, b, basic, basicToken, bitwise, block, blur, boolOptions, boss, browser, c, call, callee,
- caller, cases, charAt, charCodeAt, character, clearInterval, clearTimeout,
+ caller, cases, camelcase, charAt, charCodeAt, character, clearInterval, clearTimeout,
  close, closed, closure, comment, condition, confirm, console, constructor,
  content, couch, create, css, curly, d, data, datalist, dd, debug, decodeURI,
  decodeURIComponent, defaultStatus, defineClass, deserialize, devel, document,
  dojo, dijit, dojox, define, else, emit, encodeURI, encodeURIComponent,
  entityify, eqeqeq, eqnull, errors, es5, escape, esnext, eval, event, evidence, evil,
  ex, exception, exec, exps, expr, exports, FileReader, first, floor, focus,
- forin, fragment, frames, from, fromCharCode, fud, funcscope, funct, function, functions,
+ forin, fragment, frames, from, fromCharCode, fud, funcscope, funct, function, functions, funcdec,
  g, gc, getComputedStyle, getRow, getter, getterToken, GLOBAL, global, globals, globalstrict,
  hasOwnProperty, help, history, i, id, identifier, immed, implieds, importPackage, include,
  indent, indexOf, init, ins, instanceOf, isAlpha, isApplicationRunning, isArray,
@@ -212,18 +212,18 @@
  latedef, lbp, led, left, length, line, load, loadClass, localStorage, location,
  log, loopfunc, m, match, maxerr, maxlen, member,message, meta, module, moveBy,
  moveTo, mootools, multistr, name, navigator, new, newcap, noarg, node, noempty, nomen,
- nonew, nonstandard, nud, onbeforeunload, onblur, onerror, onevar, onecase, onfocus,
+ nonew, nonstandard, nothat, nud, onbeforeunload, onblur, onerror, onevar, onecase, onfocus,
  onload, onresize, onunload, open, openDatabase, openURL, opener, opera, options, outer, param,
  parent, parseFloat, parseInt, passfail, plusplus, predef, print, process, prompt,
  proto, prototype, prototypejs, provides, push, quit, range, raw, reach, reason, regexp,
  readFile, readUrl, regexdash, removeEventListener, replace, report, require,
  reserved, resizeBy, resizeTo, resolvePath, resumeUpdates, respond, rhino, right,
- runCommand, scroll, screen, scripturl, scrollBy, scrollTo, scrollbar, search, seal,
+ runCommand, safearray, scroll, screen, scripturl, scrollBy, scrollTo, scrollbar, search, seal,
  send, serialize, sessionStorage, setInterval, setTimeout, setter, setterToken, shift, slice,
  smarttabs, sort, spawn, split, stack, status, start, strict, sub, substr, supernew, shadow,
- supplant, sum, sync, test, toLowerCase, toString, toUpperCase, toint32, token, top, trailing,
- type, typeOf, Uint16Array, Uint32Array, Uint8Array, undef, undefs, unused, urls, validthis,
- value, valueOf, var, version, WebSocket, white, window, Worker, wsh*/
+ supplant, sum, sync, tabspace, test, toLowerCase, toString, toUpperCase, toint32, token, top,
+ trailing, type, typeOf, Uint16Array, Uint32Array, Uint8Array, undef, undefs, unused, urls,
+ validthis, value, valueOf, var, version, WebSocket, white, window, Worker, wsh*/
 
 /*global exports: false */
 
@@ -1077,10 +1077,16 @@ var JSHINT = (function () {
                             (value !== '__dirname' && value !== '__filename')) {
                         warningAt("Unexpected {a} in '{b}'.", line, from, "dangling '_'", value);
                     }
-                } else if (option.camelcase && value.indexOf('_') > 0 && value.indexOf('_') < value.length - 1 && value.toUpperCase() != value) {
-                	warningAt("Name {a} should be camel case", line, from, value);
+                } else if (option.camelcase &&
+                            value.indexOf('_') > 0 &&
+                            value.indexOf('_') < value.length - 1 &&
+                            value.toUpperCase() !== value) {
+                    warningAt("Name {a} should be camel case", line, from, value);
                 } else if (option.nothat && (value === 'that' || value === 'self')) {
-                	warningAt("{a} is a non descriptive aliases for this, should use lowercase object name", line, from, value);
+                    warningAt(
+                        "{a} is a non descriptive aliases for this," +
+			"should use lowercase object name",
+                        line, from, value);
                 }
             }
             t.value = value;
@@ -1941,8 +1947,12 @@ loop:   for (;;) {
                 advance();
                 if (isArray && token.id === '(' && nexttoken.id === ')')
                     warning("Use the array literal notation [].", token);
-                if (options.safearray && isArray && token.id == '(' && (nexttoken.type === '(identifier)' || nexttoken.type === '(number)'))
-                	warning("Unary Array notation is considered unsafe. It will create a fixed size array and will not error when assigning out of bounds. Use array literal notation [].");
+                if (option.safearray &&
+                            isArray && token.id === '(' &&
+                            (nexttoken.type === '(identifier)' || nexttoken.type === '(number)'))
+                    warning("Unary Array notation is considered unsafe. " +
+                                "It will create a fixed size array and will not error " +
+                                "when assigning out of bounds. Use array literal notation [].");
                 if (token.led) {
                     left = token.led(left);
                 } else {
@@ -2316,10 +2326,9 @@ loop:   for (;;) {
     function identifier(fnparam) {
         var i = optionalidentifier(fnparam);
         
-    	if (option.funcdec && i && prevtoken.id === 'function')
-        	warning('Function declarations are not permitted');
-    	
-    	if (i) {
+        if (option.funcdec && i && prevtoken.id === 'function')
+            warning('Function declarations are not permitted');
+        if (i) {
             return i;
         }
         

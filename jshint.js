@@ -2325,13 +2325,13 @@ loop:   for (;;) {
     // argument
     function identifier(fnparam) {
         var i = optionalidentifier(fnparam);
-        
+
         if (option.funcdec && i && prevtoken.id === 'function')
             warning('Function declarations are not permitted');
         if (i) {
             return i;
         }
-        
+
         if (token.id === 'function' && nexttoken.id === '(') {
             warning("Missing name in function declaration.");
         } else {
